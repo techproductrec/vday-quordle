@@ -1,21 +1,450 @@
-
-<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="cid:css-0a2f5e3b-306f-4d97-acde-964e7b7066e5@mhtml.blink" />
-    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valentine's Quordle</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com/">
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&amp;family=Montserrat:wght@300;400;500&amp;display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #8B4955;
+            --secondary: #C9A0A4;
+            --accent: #E6C9C3;
+            --background: #FAF7F5;
+            --surface: #FFFFFF;
+            --text-primary: #3D2C2E;
+            --text-secondary: #8B7B7D;
+            --correct: #7BA888;
+            --present: #D4A574;
+            --absent: #C4C0BC;
+            --border: #E8E2DF;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        .corner-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .corner-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .corner-btn:hover {
+            border-color: var(--secondary);
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .grids-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .grid-wrapper {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .grid-wrapper:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .grid-header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 1.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            background: var(--surface);
+        }
+
+        .tile.correct {
+            background: var(--correct);
+            border-color: var(--correct);
+            color: white;
+        }
+
+        .tile.present {
+            background: var(--present);
+            border-color: var(--present);
+            color: white;
+        }
+
+        .tile.absent {
+            background: var(--absent);
+            border-color: var(--absent);
+            color: white;
+        }
+
+        .tile.filled {
+            border-color: var(--secondary);
+            animation: pop 0.1s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .meaning {
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            min-height: 24px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        .meaning.show {
+            opacity: 1;
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .keyboard {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+
+        .key {
+            min-width: 44px;
+            height: 56px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .key:hover {
+            background: var(--accent);
+            border-color: var(--secondary);
+        }
+
+        .key.wide {
+            min-width: 70px;
+            font-size: 0.8rem;
+        }
+
+        .key.correct {
+            background: var(--correct);
+            border-color: var(--correct);
+            color: white;
+        }
+
+        .key.present {
+            background: var(--present);
+            border-color: var(--present);
+            color: white;
+        }
+
+        .key.absent {
+            background: var(--absent);
+            border-color: var(--absent);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(61, 44, 46, 0.4);
+            backdrop-filter: blur(8px);
+            animation: fadeInModal 0.3s ease;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--surface);
+            margin: 8% auto;
+            padding: 50px;
+            border-radius: 12px;
+            max-width: 520px;
+            text-align: center;
+            animation: slideDown 0.4s ease;
+            border: 1px solid var(--border);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .modal-content p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 25px;
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        .close {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 26px;
+            font-weight: 300;
+            cursor: pointer;
+            line-height: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            animation: float 3s ease-in forwards;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0.8; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .stats {
+            background: var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+        }
+
+        .stats p {
+            margin: 8px 0;
+            color: var(--text-primary);
+            font-weight: 400;
+            font-size: 0.95rem;
+        }
+
+        .instructions {
+            text-align: left;
+            line-height: 1.9;
+        }
+
+        .instructions ul {
+            margin: 15px 0 15px 25px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .instructions strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .color-demo {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin: 0 6px;
+            border: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .grids-container { grid-template-columns: 1fr; gap: 20px; }
+            .tile { width: 40px; height: 40px; font-size: 1.2rem; }
+            .key { min-width: 36px; height: 50px; font-size: 0.85rem; }
+            .modal-content { padding: 35px 25px; margin: 15% auto; }
+            .corner-controls { top: 15px; right: 15px; }
+            .corner-btn { padding: 6px 12px; font-size: 0.8rem; }
+            .grid-wrapper { padding: 20px; }
+        }
+
+        @media (max-width: 480px) {
+            .tile { width: 32px; height: 32px; font-size: 1rem; }
+            .key { min-width: 28px; height: 45px; font-size: 0.75rem; }
+            .key.wide { min-width: 50px; }
+            h1 { font-size: 2rem; }
+            .subtitle { font-size: 0.8rem; }
+        }
+    </style>
 </head>
 <body>
     <div class="corner-controls">
-        <button class="corner-btn">How to Play</button>
-        <button class="corner-btn">Reset</button>
+        <button class="corner-btn" onclick="showInstructions()">How to Play</button>
+        <button class="corner-btn" onclick="resetGame()">Reset</button>
     </div>
 
     <div class="celebration" id="celebration"></div>
-
+    
     <div class="container">
         <header>
             <h1>Valentine's Quordle</h1>
@@ -27,70 +456,70 @@
         <div class="grids-container" id="gridsContainer">
             <div class="grid-wrapper">
                 <div class="grid-header">Word 1 · <span id="length1">4</span> Letters</div>
-                <div class="grid" id="grid1"><div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
-                <div class="meaning show" id="meaning1"></div>
+                <div class="grid" id="grid1"></div>
+                <div class="meaning" id="meaning1"></div>
             </div>
-
+            
             <div class="grid-wrapper">
                 <div class="grid-header">Word 2 · <span id="length2">4</span> Letters</div>
-                <div class="grid" id="grid2"><div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+                <div class="grid" id="grid2"></div>
                 <div class="meaning" id="meaning2"></div>
             </div>
-
+            
             <div class="grid-wrapper">
                 <div class="grid-header">Word 3 · <span id="length3">4</span> Letters</div>
-                <div class="grid" id="grid3"><div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+                <div class="grid" id="grid3"></div>
                 <div class="meaning" id="meaning3"></div>
             </div>
-
+            
             <div class="grid-wrapper">
                 <div class="grid-header">Word 4 · <span id="length4">4</span> Letters</div>
-                <div class="grid" id="grid4"><div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+                <div class="grid" id="grid4"></div>
                 <div class="meaning" id="meaning4"></div>
             </div>
         </div>
 
         <div class="keyboard" id="keyboard">
             <div class="keyboard-row">
-                <button class="key">Q</button>
-                <button class="key">W</button>
-                <button class="key">E</button>
-                <button class="key">R</button>
-                <button class="key">T</button>
-                <button class="key">Y</button>
-                <button class="key">U</button>
-                <button class="key">I</button>
-                <button class="key">O</button>
-                <button class="key">P</button>
+                <button class="key" onclick="handleKey('Q')">Q</button>
+                <button class="key" onclick="handleKey('W')">W</button>
+                <button class="key" onclick="handleKey('E')">E</button>
+                <button class="key" onclick="handleKey('R')">R</button>
+                <button class="key" onclick="handleKey('T')">T</button>
+                <button class="key" onclick="handleKey('Y')">Y</button>
+                <button class="key" onclick="handleKey('U')">U</button>
+                <button class="key" onclick="handleKey('I')">I</button>
+                <button class="key" onclick="handleKey('O')">O</button>
+                <button class="key" onclick="handleKey('P')">P</button>
             </div>
             <div class="keyboard-row">
-                <button class="key">A</button>
-                <button class="key">S</button>
-                <button class="key">D</button>
-                <button class="key">F</button>
-                <button class="key">G</button>
-                <button class="key">H</button>
-                <button class="key">J</button>
-                <button class="key">K</button>
-                <button class="key">L</button>
+                <button class="key" onclick="handleKey('A')">A</button>
+                <button class="key" onclick="handleKey('S')">S</button>
+                <button class="key" onclick="handleKey('D')">D</button>
+                <button class="key" onclick="handleKey('F')">F</button>
+                <button class="key" onclick="handleKey('G')">G</button>
+                <button class="key" onclick="handleKey('H')">H</button>
+                <button class="key" onclick="handleKey('J')">J</button>
+                <button class="key" onclick="handleKey('K')">K</button>
+                <button class="key" onclick="handleKey('L')">L</button>
             </div>
             <div class="keyboard-row">
-                <button class="key wide">ENTER</button>
-                <button class="key">Z</button>
-                <button class="key">X</button>
-                <button class="key">C</button>
-                <button class="key">V</button>
-                <button class="key">B</button>
-                <button class="key">N</button>
-                <button class="key">M</button>
-                <button class="key wide">⌫</button>
+                <button class="key wide" onclick="handleKey('Enter')">ENTER</button>
+                <button class="key" onclick="handleKey('Z')">Z</button>
+                <button class="key" onclick="handleKey('X')">X</button>
+                <button class="key" onclick="handleKey('C')">C</button>
+                <button class="key" onclick="handleKey('V')">V</button>
+                <button class="key" onclick="handleKey('B')">B</button>
+                <button class="key" onclick="handleKey('N')">N</button>
+                <button class="key" onclick="handleKey('M')">M</button>
+                <button class="key wide" onclick="handleKey('Backspace')">⌫</button>
             </div>
         </div>
     </div>
 
     <div id="instructionsModal" class="modal">
         <div class="modal-content">
-            <span class="close">×</span>
+            <span class="close" onclick="closeInstructions()">&times;</span>
             <h2>How to Play</h2>
             <div class="instructions">
                 <p><strong>Welcome to Valentine's Quordle</strong></p>
@@ -111,7 +540,7 @@
                     <li>Progress through all 11 levels to win</li>
                 </ul>
             </div>
-            <button class="btn">Start Playing</button>
+            <button class="btn" onclick="closeInstructions()">Start Playing</button>
         </div>
     </div>
 
@@ -120,7 +549,7 @@
             <h2>Level Complete</h2>
             <p id="levelCompleteMessage"></p>
             <div class="stats" id="levelStats"></div>
-            <button class="btn" id="nextLevelBtn">Continue</button>
+            <button class="btn" onclick="nextLevel()" id="nextLevelBtn">Continue</button>
         </div>
     </div>
 
@@ -132,118 +561,443 @@
             <p style="font-style: italic; color: var(--text-secondary); margin-top: 25px; font-weight: 300;">
                 "Love recognizes no barriers"
             </p>
-            <button class="btn">Play Again</button>
+            <button class="btn" onclick="resetGame()">Play Again</button>
         </div>
     </div>
 
-    
+    <script>
+        const WORD_SETS = [
+            { words: [
+                { word: 'LOVE', meaning: 'deep affection' },
+                { word: 'KISS', meaning: 'affectionate touch' },
+                { word: 'DATE', meaning: 'romantic outing' },
+                { word: 'HUGS', meaning: 'warm embrace' }
+            ]},
+            { words: [
+                { word: 'HEART', meaning: 'love symbol' },
+                { word: 'CUPID', meaning: 'love archer' },
+                { word: 'JEWEL', meaning: 'precious gift/treasure' },
+                { word: 'VOWED', meaning: 'promised in love' }
+            ]},
+            { words: [
+                { word: 'CANDLE', meaning: 'romantic light' },
+                { word: 'KISSED', meaning: 'showed affection' },
+                { word: 'VOWING', meaning: 'making promises' },
+                { word: 'BRIDAL', meaning: 'wedding-related' }
+            ]},
+            { words: [
+                { word: 'ROMANCE', meaning: 'love feeling/story' },
+                { word: 'KISSING', meaning: 'showing affection' },
+                { word: 'BOUQUET', meaning: 'flowers as a gift' },
+                { word: 'WEDDING', meaning: 'marriage ceremony' }
+            ]},
+            { words: [
+                { word: 'ROMANTIC', meaning: 'love-related' },
+                { word: 'JEWELBOX', meaning: 'gift container' },
+                { word: 'HUGGABLE', meaning: 'makes you want to hug' },
+                { word: 'CUPIDITY', meaning: 'love/desire' }
+            ]},
+            { words: [
+                { word: 'CHOCOLATE', meaning: 'classic sweet gift' },
+                { word: 'VALENTINE', meaning: 'love token/person' },
+                { word: 'RINGBOXES', meaning: 'proposal/wedding vibe' },
+                { word: 'ENJOYABLE', meaning: 'pleasant date-night feel' }
+            ]},
+            { words: [
+                { word: 'SWEETHEART', meaning: 'beloved person' },
+                { word: 'LOVELETTER', meaning: 'romantic note' },
+                { word: 'BOUQUETTES', meaning: 'small flower bunches' },
+                { word: 'EXCITEMENT', meaning: 'butterflies/anticipation' }
+            ]},
+            { words: [
+                { word: 'EXQUISITELY', meaning: 'beautifully, perfectly' },
+                { word: 'MATCHMAKING', meaning: 'helping love happen' },
+                { word: 'JAWDROPPING', meaning: 'stunningly impressive' },
+                { word: 'LOVEABILITY', meaning: 'quality of being easy to love' }
+            ]},
+            { words: [
+                { word: 'AFFECTIONATE', meaning: 'openly loving' },
+                { word: 'WEDDINGBELLS', meaning: 'symbol of marriage' },
+                { word: 'SWEETNOTHING', meaning: 'soft romantic whisper' },
+                { word: 'CHOCOLATIERS', meaning: 'makers of chocolates' }
+            ]},
+            { words: [
+                { word: 'SWEETNOTHINGS', meaning: 'romantic whispers' },
+                { word: 'TENDERHEARTED', meaning: 'gentle and caring' },
+                { word: 'UNCONDITIONAL', meaning: 'love without limits' },
+                { word: 'APPRECIATIONS', meaning: 'grateful warm praise' }
+            ]},
+            { words: [
+                { word: 'THOUGHTFULNESS', meaning: 'caring attention' },
+                { word: 'AFFECTIONATELY', meaning: 'in a loving way' },
+                { word: 'WHOLEHEARTEDLY', meaning: 'with full sincerity' },
+                { word: 'INSEPARABILITY', meaning: 'cannot be parted' }
+            ]}
+        ];
 
-</body></html>
-------MultipartBoundary--jbg1TZhCOkFZ6nOtoXGKwshWvMq1mmYminzAXmBgui----
-Content-Type: text/css
-Content-Transfer-Encoding: binary
-Content-Location: https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@300;400;500&display=swap
+        let currentLevel = 0;
+        let currentRow = 0;
+        let currentGuess = '';
+        let grids = [[], [], [], []];
+        let solvedWords = [false, false, false, false];
+        let keyboardState = {};
+        let totalAttempts = 0;
+        let levelAttempts = 0;
+        let completedLevels = 0;
 
-@charset "utf-8";
+        function init() {
+            loadGameState();
+            updateProgressIndicator();
+            initializeGrids();
+            renderGrids();
+            
+            if (!localStorage.getItem('hasPlayedBefore')) {
+                setTimeout(showInstructions, 500);
+                localStorage.setItem('hasPlayedBefore', 'true');
+            }
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpHtKgS4.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        function initializeGrids() {
+            const wordLength = WORD_SETS[currentLevel].words[0].word.length;
+            
+            for (let i = 0; i < 4; i++) {
+                grids[i] = [];
+                document.getElementById(`length${i + 1}`).textContent = wordLength;
+            }
+            
+            currentRow = 0;
+            currentGuess = '';
+            solvedWords = [false, false, false, false];
+            keyboardState = {};
+            levelAttempts = 0;
+            
+            for (let i = 1; i <= 4; i++) {
+                const meaningDiv = document.getElementById(`meaning${i}`);
+                meaningDiv.textContent = '';
+                meaningDiv.classList.remove('show');
+            }
+            
+            document.querySelectorAll('.key').forEach(key => {
+                key.classList.remove('correct', 'present', 'absent');
+            });
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYrXtKgS4.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
+        function renderGrids() {
+            const wordLength = WORD_SETS[currentLevel].words[0].word.length;
+            
+            for (let gridIndex = 0; gridIndex < 4; gridIndex++) {
+                const gridElement = document.getElementById(`grid${gridIndex + 1}`);
+                gridElement.innerHTML = '';
+                
+                grids[gridIndex].forEach(row => {
+                    const rowElement = createRow(row, wordLength);
+                    gridElement.appendChild(rowElement);
+                });
+                
+                if (!solvedWords[gridIndex]) {
+                    const currentRowElement = createRow(
+                        currentGuess.split('').concat(Array(wordLength - currentGuess.length).fill('')),
+                        wordLength,
+                        true
+                    );
+                    gridElement.appendChild(currentRowElement);
+                }
+            }
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpntKgS4.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
+        function createRow(letters, wordLength, isCurrent = false) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            
+            for (let i = 0; i < wordLength; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                if (letters[i]) {
+                    if (typeof letters[i] === 'object') {
+                        tile.textContent = letters[i].letter;
+                        tile.classList.add(letters[i].state);
+                    } else {
+                        tile.textContent = letters[i];
+                        if (isCurrent) tile.classList.add('filled');
+                    }
+                }
+                
+                row.appendChild(tile);
+            }
+            
+            return row;
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYp3tKgS4.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        function handleKey(key) {
+            if (allWordsSolved()) return;
+            
+            const wordLength = WORD_SETS[currentLevel].words[0].word.length;
+            
+            if (key === 'Backspace') {
+                currentGuess = currentGuess.slice(0, -1);
+            } else if (key === 'Enter') {
+                if (currentGuess.length === wordLength) {
+                    submitGuess();
+                }
+            } else if (currentGuess.length < wordLength && /^[A-Z]$/.test(key)) {
+                currentGuess += key;
+            }
+            
+            renderGrids();
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        document.addEventListener('keydown', (e) => {
+            if (document.querySelector('.modal').style.display === 'block') return;
+            
+            const key = e.key.toUpperCase();
+            if (key === 'BACKSPACE') {
+                handleKey('Backspace');
+            } else if (key === 'ENTER') {
+                handleKey('Enter');
+            } else if (/^[A-Z]$/.test(key)) {
+                handleKey(key);
+            }
+        });
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpHtKgS4.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        function submitGuess() {
+            levelAttempts++;
+            totalAttempts++;
+            
+            for (let i = 0; i < 4; i++) {
+                if (!solvedWords[i]) {
+                    const result = checkGuess(currentGuess, WORD_SETS[currentLevel].words[i].word);
+                    grids[i].push(result);
+                    
+                    result.forEach(tile => {
+                        const letter = tile.letter;
+                        if (!keyboardState[letter] || 
+                            (keyboardState[letter] !== 'correct' && tile.state === 'correct') ||
+                            (keyboardState[letter] === 'absent' && tile.state === 'present')) {
+                            keyboardState[letter] = tile.state;
+                        }
+                    });
+                    
+                    if (currentGuess === WORD_SETS[currentLevel].words[i].word) {
+                        solvedWords[i] = true;
+                        showMeaning(i);
+                    }
+                }
+            }
+            
+            updateKeyboard();
+            currentGuess = '';
+            currentRow++;
+            renderGrids();
+            
+            if (allWordsSolved()) {
+                setTimeout(showLevelComplete, 500);
+            }
+            
+            saveGameState();
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYrXtKgS4.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
+        function checkGuess(guess, answer) {
+            const result = [];
+            const answerArray = answer.split('');
+            const guessArray = guess.split('');
+            const used = Array(answer.length).fill(false);
+            
+            for (let i = 0; i < guess.length; i++) {
+                if (guessArray[i] === answerArray[i]) {
+                    result[i] = { letter: guessArray[i], state: 'correct' };
+                    used[i] = true;
+                } else {
+                    result[i] = { letter: guessArray[i], state: 'absent' };
+                }
+            }
+            
+            for (let i = 0; i < guess.length; i++) {
+                if (result[i].state === 'absent') {
+                    for (let j = 0; j < answer.length; j++) {
+                        if (!used[j] && guessArray[i] === answerArray[j]) {
+                            result[i].state = 'present';
+                            used[j] = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            return result;
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpntKgS4.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
+        function updateKeyboard() {
+            for (const [letter, state] of Object.entries(keyboardState)) {
+                const keys = document.querySelectorAll('.key');
+                keys.forEach(key => {
+                    if (key.textContent === letter) {
+                        key.classList.remove('correct', 'present', 'absent');
+                        key.classList.add(state);
+                    }
+                });
+            }
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYp3tKgS4.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        function showMeaning(gridIndex) {
+            const meaningDiv = document.getElementById(`meaning${gridIndex + 1}`);
+            meaningDiv.textContent = WORD_SETS[currentLevel].words[gridIndex].meaning;
+            setTimeout(() => {
+                meaningDiv.classList.add('show');
+            }, 300);
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        function allWordsSolved() {
+            return solvedWords.every(solved => solved);
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpHtKgS4.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        function showLevelComplete() {
+            createCelebration();
+            
+            const modal = document.getElementById('levelCompleteModal');
+            const message = document.getElementById('levelCompleteMessage');
+            const stats = document.getElementById('levelStats');
+            const btn = document.getElementById('nextLevelBtn');
+            
+            const wordLength = WORD_SETS[currentLevel].words[0].word.length;
+            message.textContent = `You've completed all ${wordLength}-letter words`;
+            
+            stats.innerHTML = `
+                <p><strong>Attempts:</strong> ${levelAttempts}</p>
+                <p><strong>Total Attempts:</strong> ${totalAttempts}</p>
+            `;
+            
+            if (currentLevel === WORD_SETS.length - 1) {
+                btn.textContent = 'View Results';
+                btn.onclick = showGameComplete;
+            } else {
+                btn.textContent = 'Continue';
+                btn.onclick = nextLevel;
+            }
+            
+            modal.style.display = 'block';
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYrXtKgS4.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
+        function nextLevel() {
+            document.getElementById('levelCompleteModal').style.display = 'none';
+            
+            completedLevels++;
+            currentLevel++;
+            
+            if (currentLevel >= WORD_SETS.length) {
+                showGameComplete();
+                return;
+            }
+            
+            initializeGrids();
+            updateProgressIndicator();
+            renderGrids();
+            saveGameState();
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpntKgS4.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
+        function showGameComplete() {
+            document.getElementById('levelCompleteModal').style.display = 'none';
+            
+            const modal = document.getElementById('gameCompleteModal');
+            const stats = document.getElementById('finalStats');
+            
+            stats.innerHTML = `
+                <p><strong>Levels Completed:</strong> ${WORD_SETS.length}</p>
+                <p><strong>Total Attempts:</strong> ${totalAttempts}</p>
+                <p><strong>Average per Level:</strong> ${(totalAttempts / WORD_SETS.length).toFixed(1)}</p>
+            `;
+            
+            modal.style.display = 'block';
+            createCelebration(40);
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYp3tKgS4.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        function updateProgressIndicator() {
+            const wordLength = WORD_SETS[currentLevel].words[0].word.length;
+            document.getElementById('progressIndicator').textContent = 
+                `Level ${currentLevel + 1} of ${WORD_SETS.length} · ${wordLength} Letters`;
+        }
 
-@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        function createCelebration(count = 25) {
+            const celebration = document.getElementById('celebration');
+            celebration.innerHTML = '';
+            
+            const hearts = ['♥', '♡'];
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                    heart.style.left = Math.random() * 100 + '%';
+                    heart.style.color = `hsl(${340 + Math.random() * 20}, 50%, 55%)`;
+                    heart.style.animationDelay = Math.random() * 0.5 + 's';
+                    celebration.appendChild(heart);
+                    
+                    setTimeout(() => heart.remove(), 3000);
+                }, i * 100);
+            }
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        function showInstructions() {
+            document.getElementById('instructionsModal').style.display = 'block';
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
+        function closeInstructions() {
+            document.getElementById('instructionsModal').style.display = 'none';
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
+        function resetGame() {
+            if (confirm('Reset your progress and start from the beginning?')) {
+                currentLevel = 0;
+                totalAttempts = 0;
+                completedLevels = 0;
+                
+                document.getElementById('levelCompleteModal').style.display = 'none';
+                document.getElementById('gameCompleteModal').style.display = 'none';
+                
+                initializeGrids();
+                updateProgressIndicator();
+                renderGrids();
+                saveGameState();
+            }
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        function saveGameState() {
+            const state = {
+                currentLevel,
+                grids,
+                solvedWords,
+                currentRow,
+                keyboardState,
+                totalAttempts,
+                levelAttempts,
+                completedLevels
+            };
+            localStorage.setItem('valentineQuordleState', JSON.stringify(state));
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 300; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        function loadGameState() {
+            const saved = localStorage.getItem('valentineQuordleState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                currentLevel = state.currentLevel || 0;
+                grids = state.grids || [[], [], [], []];
+                solvedWords = state.solvedWords || [false, false, false, false];
+                currentRow = state.currentRow || 0;
+                keyboardState = state.keyboardState || {};
+                totalAttempts = state.totalAttempts || 0;
+                levelAttempts = state.levelAttempts || 0;
+                completedLevels = state.completedLevels || 0;
+                
+                solvedWords.forEach((solved, i) => {
+                    if (solved) showMeaning(i);
+                });
+                
+                updateKeyboard();
+            }
+        }
 
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 400; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 500; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2") format("woff2"); unicode-range: U+460-52F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 500; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2") format("woff2"); unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1, U+2116; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 500; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2") format("woff2"); unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 500; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2") format("woff2"); unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-
-@font-face { font-family: Montserrat; font-style: normal; font-weight: 500; font-display: swap; src: url("https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2") format("woff2"); unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-------MultipartBoundary--jbg1TZhCOkFZ6nOtoXGKwshWvMq1mmYminzAXmBgui----
-Content-Type: text/css
-Content-Transfer-Encoding: binary
-Content-Location: cid:css-0a2f5e3b-306f-4d97-acde-964e7b7066e5@mhtml.blink
-
-@charset "utf-8";
-
-* { margin: 0px; padding: 0px; box-sizing: border-box; }
-
-:root { --primary: #8B4955; --secondary: #C9A0A4; --accent: #E6C9C3; --background: #FAF7F5; --surface: #FFFFFF; --text-primary: #3D2C2E; --text-secondary: #8B7B7D; --correct: #7BA888; --present: #D4A574; --absent: #C4C0BC; --border: #E8E2DF; }
-
-body { font-family: Montserrat, sans-serif; background: var(--background); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--text-primary); }
-
-.corner-controls { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 100; }
-
-.corner-btn { border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.3s; font-family: Montserrat, sans-serif; backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.7); }
-
-.corner-btn:hover { border-color: var(--secondary); color: var(--primary); background: rgba(255, 255, 255, 0.95); }
-
-.container { max-width: 1200px; width: 100%; margin-top: 40px; }
-
-header { text-align: center; margin-bottom: 50px; }
-
-h1 { font-family: "Cormorant Garamond", serif; font-size: 3.5rem; font-weight: 300; color: var(--primary); margin-bottom: 8px; letter-spacing: 2px; }
-
-.subtitle { font-size: 0.95rem; color: var(--text-secondary); font-weight: 300; letter-spacing: 3px; text-transform: uppercase; }
-
-.progress-indicator { text-align: center; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 40px; font-weight: 400; letter-spacing: 1px; }
-
-.grids-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-bottom: 50px; }
-
-.grid-wrapper { background: var(--surface); padding: 30px; border-radius: 8px; border: 1px solid var(--border); transition: 0.3s; }
-
-.grid-wrapper:hover { box-shadow: rgba(0, 0, 0, 0.06) 0px 4px 20px; }
-
-.grid-header { text-align: center; margin-bottom: 20px; color: var(--text-secondary); font-weight: 400; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
-
-.grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
-
-.row { display: flex; gap: 6px; justify-content: center; }
-
-.tile { width: 50px; height: 50px; border: 1.5px solid var(--border); display: flex; align-it
+        init();
+    </script>
+</body>
+</html>
